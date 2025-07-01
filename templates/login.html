@@ -1,0 +1,182 @@
+<!-- Modern login.html -->
+{% extends 'base.html' %}
+{% block title %}Login - SecureCloud{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Logo and Title -->
+        <div class="text-center fade-in">
+            <div class="w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-shield-alt text-white text-3xl"></i>
+            </div>
+            <h2 class="text-4xl font-bold text-white mb-2">Chào mừng trở lại</h2>
+            <p class="text-white/70 text-lg">Đăng nhập để tiếp tục sử dụng SecureCloud</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="glass-card p-8 slide-up">
+            {% if error %}
+            <div class="status-error mb-6 flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                <div>
+                    <label for="username" class="form-label flex items-center">
+                        <i class="fas fa-user mr-2 text-blue-400"></i>
+                        Tên đăng nhập
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="username" name="username" required
+                               class="form-input pl-12"
+                               placeholder="Nhập tên đăng nhập của bạn">
+                        <i class="fas fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="form-label flex items-center">
+                        <i class="fas fa-lock mr-2 text-purple-400"></i>
+                        Mật khẩu
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" required
+                               class="form-input pl-12 pr-12"
+                               placeholder="Nhập mật khẩu của bạn">
+                        <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60"></i>
+                        <button type="button" id="togglePassword" 
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white focus:outline-none">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" class="form-checkbox">
+                        <span class="text-white/80 text-sm">Ghi nhớ đăng nhập</span>
+                    </label>
+                    <a href="#" class="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors">
+                        Quên mật khẩu?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn-primary w-full text-lg py-4 group">
+                    <i class="fas fa-sign-in-alt mr-2 group-hover:translate-x-1 transition-transform"></i>
+                    Đăng nhập
+                </button>
+            </form>
+
+            <!-- Social Login Options -->
+            <div class="mt-8">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-white/20"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-transparent text-white/60">Hoặc đăng nhập bằng</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <button class="btn-secondary flex items-center justify-center py-3">
+                        <i class="fab fa-google mr-2 text-red-400"></i>
+                        Google
+                    </button>
+                    <button class="btn-secondary flex items-center justify-center py-3">
+                        <i class="fab fa-github mr-2 text-gray-400"></i>
+                        GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+            <div class="glass-card p-4 text-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-lock text-white"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Bảo mật cao</h3>
+                <p class="text-white/60 text-xs">Mã hóa AES-256</p>
+            </div>
+            <div class="glass-card p-4 text-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-cloud text-white"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Lưu trữ đám mây</h3>
+                <p class="text-white/60 text-xs">An toàn & tiện lợi</p>
+            </div>
+            <div class="glass-card p-4 text-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-bolt text-white"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Tốc độ cao</h3>
+                <p class="text-white/60 text-xs">Upload nhanh chóng</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white/60 text-sm">
+            <p>Chưa có tài khoản? 
+                <a href="#" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                    Đăng ký ngay
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const password = document.getElementById('password');
+        const icon = this.querySelector('i');
+        
+        if (password.type === 'password') {
+            password.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            password.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+
+    // Form animation on focus
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('scale-105');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('scale-105');
+        });
+    });
+
+    // Add floating particles effect
+    function createParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'fixed w-2 h-2 bg-blue-400 rounded-full opacity-70 pointer-events-none z-0';
+        particle.style.left = Math.random() * window.innerWidth + 'px';
+        particle.style.top = window.innerHeight + 'px';
+        document.body.appendChild(particle);
+
+        const animation = particle.animate([
+            { transform: 'translateY(0px)', opacity: 0.7 },
+            { transform: `translateY(-${window.innerHeight + 100}px)`, opacity: 0 }
+        ], {
+            duration: 3000 + Math.random() * 2000,
+            easing: 'linear'
+        });
+
+        animation.onfinish = () => particle.remove();
+    }
+
+    // Create particles periodically
+    setInterval(createParticle, 300);
+</script>
+{% endblock %}

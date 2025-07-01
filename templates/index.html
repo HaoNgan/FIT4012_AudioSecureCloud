@@ -1,0 +1,321 @@
+<!-- Modern index.html -->
+{% extends 'base.html' %}
+{% block title %}Home - SecureCloud{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function uploadFile() {
+        let form = document.getElementById('uploadForm');
+        let progressContainer = document.getElementById('progressContainer');
+        let progressBar = document.getElementById('progressBar');
+        let progressText = document.getElementById('progressText');
+        let status = document.getElementById('status');
+        let encryptTime = document.getElementById('encrypt-time');
+        let uploadButton = document.querySelector('button[type="submit"]');
+        let xhr = new XMLHttpRequest();
+
+        // Show progress bar and disable button
+        progressContainer.classList.remove('hidden');
+        uploadButton.disabled = true;
+        uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang tải lên...';
+
+        console.log('Starting upload...');
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                let percent = Math.round((event.loaded / event.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.innerText = percent + '%';
+                console.log('Progress: ' + percent + '%');
+            }
+        };
+
+        xhr.onload = function() {
+            console.log('xhr.onload triggered');
+            uploadButton.disabled = false;
+            uploadButton.innerHTML = '<i class="fas fa-upload mr-2"></i>Tải lên';
+            
+            try {
+                let response = JSON.parse(xhr.responseText);
+                console.log('Parsed response:', response);
+                let statusText = response.status || 'Unknown response';
+                status.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${statusText}`;
+                encryptTime.innerHTML = response.encrypt_time ? `${response.encrypt_time.toFixed(2)}s` : '0.00s';
+                
+                if (response.status && response.status.startsWith('ACK')) {
+                    status.className = 'status-success flex items-center';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tải lên thành công!',
+                        text: response.status,
+                        timer: 2000,
+                        background: '#1e293b',
+                        color: '#fff',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                } else {
+                    status.className = 'status-error flex items-center';
+                    let text = statusText;
+                    if (response.status && response.status.includes('Tag mismatch')) {
+                        text = 'Dữ liệu bị giả mạo!';
+                        console.log('Tag mismatch detected, setting text to:', text);
+                    }
+                    console.log('Showing Swal with text:', text);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Tải lên thất bại',
+                        text: text,
+                        background: '#1e293b',
+                        color: '#fff',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            } catch (e) {
+                console.log('Error parsing response:', e);
+                status.className = 'status-error flex items-center';
+                status.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Lỗi phân tích phản hồi';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tải lên thất bại',
+                    text: 'Lỗi phân tích phản hồi từ server',
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        };
+
+        xhr.onerror = function() {
+            console.log('xhr.onerror triggered');
+            uploadButton.disabled = false;
+            uploadButton.innerHTML = '<i class="fas fa-upload mr-2"></i>Tải lên';
+            status.className = 'status-error flex items-center';
+            status.innerHTML = '<i class="fas fa-wifi mr-2"></i>Lỗi kết nối mạng';
+            Swal.fire({
+                icon: 'error',
+                title: 'Tải lên thất bại',
+                text: 'Đã xảy ra lỗi kết nối mạng',
+                background: '#1e293b',
+                color: '#fff',
+                confirmButtonColor: '#ef4444'
+            });
+        };
+
+        xhr.open('POST', '/upload', true);
+        xhr.setRequestHeader('Accept', 'application/json');
+        console.log('Sending request...');
+        xhr.send(new FormData(form));
+        return false;
+    }
+
+    // File drag and drop functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const uploadArea = document.getElementById('uploadArea');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileName();
+        }
+
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            const fileName = fileInput.files[0]?.name || 'Chọn file MP3...';
+            document.getElementById('fileName').textContent = fileName;
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 fade-in">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold text-white mb-4">
+            Chào mừng đến với 
+            <span class="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">SecureCloud</span>
+        </h1>
+        <p class="text-white/70 text-xl">Hệ thống truyền file an toàn với mã hóa tiên tiến</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="glass-card p-8 slide-up">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div>
+                <h2 class="text-3xl font-bold text-white">Tải lên File</h2>
+                <p class="text-white/70">Tải lên file MP3 với bảo mật tối đa</p>
+            </div>
+        </div>
+
+        <form id="uploadForm" onsubmit="return uploadFile()" enctype="multipart/form-data" class="space-y-6">
+            <!-- File Upload Area -->
+            <div id="uploadArea" class="file-upload-area">
+                <div class="text-center">
+                    <i class="fas fa-music text-6xl text-white/50 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-white mb-2">Kéo thả file vào đây</h3>
+                    <p class="text-white/60 mb-4">hoặc click để chọn file</p>
+                    <input type="file" id="file" name="file" accept=".mp3" required class="hidden">
+                    <label for="file" class="btn-secondary cursor-pointer inline-flex items-center">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        <span id="fileName">Chọn file MP3...</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="bg-white/5 rounded-xl p-6 backdrop-blur-sm">
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="simulate_attack" class="form-checkbox">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-bug text-red-400"></i>
+                        <span class="text-white/90 font-medium">Mô phỏng tấn công (Làm hỏng dữ liệu)</span>
+                    </div>
+                </label>
+                <p class="text-white/60 text-sm mt-2 ml-8">Bật tùy chọn này để kiểm tra tính toàn vẹn dữ liệu</p>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-primary w-full text-lg py-4">
+                <i class="fas fa-upload mr-2"></i>
+                Tải lên
+            </button>
+        </form>
+
+        <!-- Progress Bar -->
+        <div id="progressContainer" class="hidden mt-6">
+            <div class="flex justify-between text-white/80 text-sm mb-2">
+                <span>Tiến trình tải lên</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-container relative">
+                <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 pt-6 border-t border-white/20">
+            <div class="flex flex-wrap gap-4">
+                <a href="{{ url_for('list_files') }}" class="btn-secondary flex items-center">
+                    <i class="fas fa-folder mr-2"></i>
+                    Xem file đã tải
+                </a>
+                <a href="{{ url_for('view_logs') }}" class="btn-secondary flex items-center">
+                    <i class="fas fa-history mr-2"></i>
+                    Xem nhật ký
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Status Card -->
+        <div class="glass-card p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-info-circle text-white"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white">Trạng thái</h3>
+            </div>
+            <div id="status" class="status-info flex items-center">
+                <i class="fas fa-clock mr-2"></i>{{ status }}
+            </div>
+        </div>
+
+        <!-- Handshake Status Card -->
+        <div class="glass-card p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-handshake text-white"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white">Bắt tay</h3>
+            </div>
+            <div class="{% if handshake_status.startswith('Handshake successful') %}status-success{% else %}status-error{% endif %} flex items-center">
+                <i class="fas {% if handshake_status.startswith('Handshake successful') %}fa-check-circle{% else %}fa-times-circle{% endif %} mr-2"></i>
+                {{ handshake_status }}
+            </div>
+        </div>
+
+        <!-- Encryption Time Card -->
+        <div class="glass-card p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-stopwatch text-white"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white">Thời gian mã hóa</h3>
+            </div>
+            <div class="status-info flex items-center">
+                <i class="fas fa-clock mr-2"></i>
+                <span id="encrypt-time">0.00s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="glass-card p-8">
+        <h3 class="text-2xl font-bold text-white mb-6 text-center">Tính năng bảo mật</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-white text-2xl"></i>
+                </div>
+                <h4 class="text-white font-semibold mb-2">Mã hóa AES</h4>
+                <p class="text-white/60 text-sm">Mã hóa mạnh mẽ bảo vệ dữ liệu</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                </div>
+                <h4 class="text-white font-semibold mb-2">Toàn vẹn dữ liệu</h4>
+                <p class="text-white/60 text-sm">Kiểm tra tính toàn vẹn với HMAC</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-key text-white text-2xl"></i>
+                </div>
+                <h4 class="text-white font-semibold mb-2">RSA Handshake</h4>
+                <p class="text-white/60 text-sm">Trao đổi khóa an toàn</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-r from-red-400 to-rose-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-history text-white text-2xl"></i>
+                </div>
+                <h4 class="text-white font-semibold mb-2">Ghi log</h4>
+                <p class="text-white/60 text-sm">Theo dõi mọi hoạt động</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

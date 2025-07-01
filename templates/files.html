@@ -1,0 +1,554 @@
+<!-- Modern files.html with Delete Function -->
+{% extends 'base.html' %}
+{% block title %}Files - SecureCloud{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function downloadFile(filename) {
+        // Show loading state
+        const button = event.target;
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...';
+        button.disabled = true;
+        
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', `/download/${filename}`, true);
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            
+            if (xhr.status === 200) {
+                let blob = xhr.response;
+                let link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tải xuống thành công!',
+                    text: `File ${filename} đã được tải xuống`,
+                    timer: 2000,
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#10b981'
+                });
+            } else {
+                let reader = new FileReader();
+                reader.onload = function() {
+                    let response = JSON.parse(reader.result);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Tải xuống thất bại',
+                        text: response.status || 'Đã xảy ra lỗi khi tải file',
+                        background: '#1e293b',
+                        color: '#fff',
+                        confirmButtonColor: '#ef4444'
+                    });
+                };
+                reader.readAsText(xhr.response);
+            }
+        };
+
+        xhr.onerror = function() {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            Swal.fire({
+                icon: 'error',
+                title: 'Tải xuống thất bại',
+                text: 'Đã xảy ra lỗi kết nối mạng',
+                background: '#1e293b',
+                color: '#fff',
+                confirmButtonColor: '#ef4444'
+            });
+        };
+
+        xhr.send();
+    }
+
+    // Delete file function
+    function deleteFile(filename) {
+        Swal.fire({
+            title: 'Xác nhận xóa file',
+            text: `Bạn có chắc chắn muốn xóa file "${filename}"? Hành động này không thể hoàn tác!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            background: '#1e293b',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading state
+                const button = event.target;
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xóa...';
+                button.disabled = true;
+                
+                let xhr = new XMLHttpRequest();
+                xhr.open('DELETE', `/delete/${encodeURIComponent(filename)}`, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+
+                xhr.onload = function() {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                    
+                    if (xhr.status === 200) {
+                        try {
+                            let response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Xóa thành công!',
+                                    text: `File ${filename} đã được xóa`,
+                                    timer: 2000,
+                                    background: '#1e293b',
+                                    color: '#fff',
+                                    confirmButtonColor: '#10b981'
+                                }).then(() => {
+                                    // Reload page to update file list
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Xóa thất bại',
+                                    text: response.message || 'Đã xảy ra lỗi khi xóa file',
+                                    background: '#1e293b',
+                                    color: '#fff',
+                                    confirmButtonColor: '#ef4444'
+                                });
+                            }
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Xóa thất bại',
+                                text: 'Phản hồi từ server không hợp lệ',
+                                background: '#1e293b',
+                                color: '#fff',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    } else {
+                        try {
+                            let response = JSON.parse(xhr.responseText);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Xóa thất bại',
+                                text: response.message || 'Đã xảy ra lỗi khi xóa file',
+                                background: '#1e293b',
+                                color: '#fff',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Xóa thất bại',
+                                text: `Lỗi server: ${xhr.status}`,
+                                background: '#1e293b',
+                                color: '#fff',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    }
+                };
+
+                xhr.onerror = function() {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Xóa thất bại',
+                        text: 'Đã xảy ra lỗi kết nối mạng',
+                        background: '#1e293b',
+                        color: '#fff',
+                        confirmButtonColor: '#ef4444'
+                    });
+                };
+
+                xhr.send();
+            }
+        });
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Format timestamp
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString('vi-VN');
+    }
+
+    // Search functionality
+    function searchFiles() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('filesTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const filename = rows[i].getElementsByTagName('td')[0];
+            if (filename) {
+                const txtValue = filename.textContent || filename.innerText;
+                if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    }
+
+    // Bulk delete functionality
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.file-checkbox');
+        const selectAll = document.getElementById('selectAll');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+        const bulkActions = document.getElementById('bulkActions');
+        
+        if (checkboxes.length > 0) {
+            bulkActions.style.display = 'block';
+            document.getElementById('selectedCount').textContent = checkboxes.length;
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+
+    function bulkDelete() {
+        const checkedBoxes = document.querySelectorAll('.file-checkbox:checked');
+        const filenames = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        if (filenames.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa chọn file',
+                text: 'Vui lòng chọn ít nhất một file để xóa',
+                background: '#1e293b',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Xác nhận xóa nhiều file',
+            text: `Bạn có chắc chắn muốn xóa ${filenames.length} file đã chọn? Hành động này không thể hoàn tác!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Xóa tất cả',
+            cancelButtonText: 'Hủy',
+            background: '#1e293b',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show progress dialog
+                Swal.fire({
+                    title: 'Đang xóa file...',
+                    html: `Đang xóa 0/${filenames.length} file`,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    background: '#1e293b',
+                    color: '#fff',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                let completed = 0;
+                let failed = [];
+
+                filenames.forEach((filename, index) => {
+                    let xhr = new XMLHttpRequest();
+                    xhr.open('DELETE', `/delete/${encodeURIComponent(filename)}`, true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+
+                    xhr.onload = function() {
+                        completed++;
+                        
+                        if (xhr.status !== 200) {
+                            failed.push(filename);
+                        }
+
+                        // Update progress
+                        Swal.update({
+                            html: `Đang xóa ${completed}/${filenames.length} file`
+                        });
+
+                        // Check if all requests completed
+                        if (completed === filenames.length) {
+                            if (failed.length === 0) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Xóa thành công!',
+                                    text: `Đã xóa ${filenames.length} file`,
+                                    timer: 2000,
+                                    background: '#1e293b',
+                                    color: '#fff',
+                                    confirmButtonColor: '#10b981'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Xóa hoàn tất với lỗi',
+                                    text: `Đã xóa ${filenames.length - failed.length}/${filenames.length} file. ${failed.length} file không thể xóa.`,
+                                    background: '#1e293b',
+                                    color: '#fff',
+                                    confirmButtonColor: '#f59e0b'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            }
+                        }
+                    };
+
+                    xhr.onerror = function() {
+                        completed++;
+                        failed.push(filename);
+                        
+                        // Update progress
+                        Swal.update({
+                            html: `Đang xóa ${completed}/${filenames.length} file`
+                        });
+
+                        // Check if all requests completed
+                        if (completed === filenames.length) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Xóa thất bại',
+                                text: `Không thể xóa ${failed.length}/${filenames.length} file`,
+                                background: '#1e293b',
+                                color: '#fff',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    };
+
+                    xhr.send();
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8 fade-in">
+    <!-- Header Section -->
+    <div class="glass-card p-8">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-3xl font-bold text-white">Quản lý File</h2>
+                <p class="text-white/70">Danh sách các file đã được tải lên và mã hóa</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn-secondary flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Tải lên file mới
+            </a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <div class="relative">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60"></i>
+                <input type="text" id="searchInput" onkeyup="searchFiles()" 
+                       placeholder="Tìm kiếm file..." 
+                       class="form-input pl-12">
+            </div>
+        </div>
+
+        <!-- Status Message -->
+        {% if status %}
+        <div class="status-info mb-6 flex items-center">
+            <i class="fas fa-info-circle mr-2"></i>
+            {{ status }}
+        </div>
+        {% endif %}
+
+        <!-- Bulk Actions -->
+        <div id="bulkActions" class="mb-6 p-4 bg-white/10 rounded-lg backdrop-filter backdrop-blur-sm" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div class="text-white">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    Đã chọn <span id="selectedCount">0</span> file
+                </div>
+                <button onclick="bulkDelete()" class="btn-danger flex items-center">
+                    <i class="fas fa-trash mr-2"></i>
+                    Xóa đã chọn
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files Table -->
+    {% if files %}
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table id="filesTable" class="modern-table">
+                <thead>
+                    <tr>
+                        <th class="text-center w-16">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" 
+                                   class="form-checkbox">
+                        </th>
+                        <th class="flex items-center space-x-2">
+                            <i class="fas fa-file-audio text-blue-400"></i>
+                            <span>Tên file</span>
+                        </th>
+                        <th>
+                            <i class="fas fa-clock text-purple-400 mr-2"></i>
+                            Thời gian
+                        </th>
+                        <th>
+                            <i class="fas fa-weight text-green-400 mr-2"></i>
+                            Kích thước
+                        </th>
+                        <th>
+                            <i class="fas fa-fingerprint text-yellow-400 mr-2"></i>
+                            Hash
+                        </th>
+                        <th class="text-center">
+                            <i class="fas fa-cogs text-red-400 mr-2"></i>
+                            Thao tác
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr class="hover:bg-white/5 transition-colors duration-200">
+                        <td class="text-center">
+                            <input type="checkbox" class="file-checkbox form-checkbox" 
+                                   value="{{ file[0] }}" onchange="updateBulkActions()">
+                        </td>
+                        <td class="font-medium">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-music text-white text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="text-white font-semibold">{{ file[0] }}</div>
+                                    <div class="text-white/60 text-sm">MP3 Audio File</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-white/90">{{ file[1] }}</div>
+                            <div class="text-white/60 text-sm">
+                                <script>document.write(formatTimestamp('{{ file[1] }}'))</script>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-white/90 font-mono">{{ file[2] }}</div>
+                            <div class="text-white/60 text-sm">
+                                <script>document.write(formatFileSize({{ file[2] }}))</script>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-mono text-sm bg-white/10 rounded-lg px-3 py-2 inline-block">
+                                <span class="text-white/90">{{ file[3][:16] }}...</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <button onclick="downloadFile('{{ file[0] | safe }}')"
+                                        class="btn-success flex items-center">
+                                    <i class="fas fa-download mr-2"></i>
+                                    Tải xuống
+                                </button>
+                                <button onclick="deleteFile('{{ file[0] | safe }}')"
+                                        class="btn-danger flex items-center">
+                                    <i class="fas fa-trash mr-2"></i>
+                                    Xóa
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Files Statistics -->
+        <div class="bg-white/5 p-6 border-t border-white/10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-400">{{ files|length }}</div>
+                    <div class="text-white/60 text-sm">Tổng số file</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-400">
+                        {% set total_size = files|sum(attribute=2) %}{{ total_size }}
+                    </div>
+                    <div class="text-white/60 text-sm">Tổng dung lượng (bytes)</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-400">100%</div>
+                    <div class="text-white/60 text-sm">Tỷ lệ mã hóa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="glass-card p-12 text-center">
+        <div class="w-24 h-24 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-folder-open text-white text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-white mb-4">Chưa có file nào</h3>
+        <p class="text-white/70 mb-8">Bạn chưa tải lên file nào. Hãy bắt đầu bằng cách tải lên file MP3 đầu tiên của bạn.</p>
+        <a href="{{ url_for('index') }}" class="btn-primary inline-flex items-center">
+            <i class="fas fa-upload mr-2"></i>
+            Tải lên file đầu tiên
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+            Thao tác nhanh
+        </h3>
+        <div class="flex flex-wrap gap-4">
+            <a href="{{ url_for('index') }}" class="btn-secondary flex items-center">
+                <i class="fas fa-cloud-upload-alt mr-2"></i>
+                Tải lên file mới
+            </a>
+            <a href="{{ url_for('view_logs') }}" class="btn-secondary flex items-center">
+                <i class="fas fa-history mr-2"></i>
+                Xem nhật ký hoạt động
+            </a>
+            <button onclick="location.reload()" class="btn-secondary flex items-center">
+                <i class="fas fa-refresh mr-2"></i>
+                Làm mới danh sách
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
